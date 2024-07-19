@@ -5,8 +5,6 @@ const { resolve } = require('path');
 const env = require('dotenv').config({ path: './.env' });
 
 
-console.log('===================>', process.env.STRIPE_SECRET_KEY)
-
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2020-08-27',
   appInfo: { // For sample support and debugging, not required for production:
@@ -17,6 +15,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY, {
 });
 
 app.use(express.static(process.env.STATIC_DIR));
+
 app.use(
   express.json({
     // We need the raw body to verify webhook signatures.
@@ -46,26 +45,22 @@ app.post('/create-verification-session', async (req, res) => {
       type: 'document',
       metadata: {
         user_id: '{{USER_ID}}',
-      }
+      },
       // Additional options for configuring the verification session:
-      // options: {
-      //   document: {
-      //     # Array of strings of allowed identity document types.
-      //     allowed_types: ['driving_license'], # passport | id_card
-      //
-      //     # Collect an ID number and perform an ID number check with the
-      //     # document’s extracted name and date of birth.
-      //     require_id_number: true,
-      //
-      //     # Disable image uploads, identity document images have to be captured
-      //     # using the device’s camera.
-      //     require_live_capture: true,
-      //
-      //     # Capture a face image and perform a selfie check comparing a photo
-      //     # ID and a picture of your user’s face.
-      //     require_matching_selfie: true,
-      //   }
-      // },
+      options: {
+        document: {
+          // # Array of strings of allowed identity document types.
+          allowed_types: ['driving_license', 'passport', 'id_card'],
+          // # Collect an ID number and perform an ID number check with the document’s extracted name and date of birth.
+          require_id_number: true,
+
+          // # Disable image uploads, identity document images have to be captured using the device’s camera.
+          // require_live_capture: true,
+
+          // # Capture a face image and perform a selfie check comparing a photo ID and a picture of your user’s face.
+          // require_matching_selfie: true,
+        }
+      },
 
     });
 
@@ -85,6 +80,7 @@ app.post('/create-verification-session', async (req, res) => {
 // https://dashboard.stripe.com/test/webhooks
 app.post('/webhook', async (req, res) => {
   let data, eventType;
+  console.log("webhook===================>")
 
   // Check if webhook signing is configured.
   if (process.env.STRIPE_WEBHOOK_SECRET) {
@@ -108,6 +104,7 @@ app.post('/webhook', async (req, res) => {
     // we can retrieve the event data directly from the request body.
     data = req.body.data;
     eventType = req.body.type;
+    console.log("data, eventType we can retrieve the event data directly from the request body. ", eventType)
   }
 
   // Successfully constructed event
@@ -115,13 +112,13 @@ app.post('/webhook', async (req, res) => {
     case 'identity.verification_session.verified': {
       // All the verification checks passed
       const verificationSession = data.object;
-      console.log(verificationSession)
+      console.log("verificationSession===================>", verificationSession)
       break;
     }
+
     case 'identity.verification_session.requires_input': {
       // At least one of the verification checks failed
       const verificationSession = data.object;
-
       console.log('Verification check failed: ' + verificationSession.last_error.reason);
 
       // Handle specific failure reasons
@@ -143,6 +140,7 @@ app.post('/webhook', async (req, res) => {
         }
         default: {
           // ...
+          console.log('document default')
         }
       }
     }

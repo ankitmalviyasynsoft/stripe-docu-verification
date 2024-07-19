@@ -21,13 +21,15 @@ export default function VerifyPage({ stripePromise }: any) {
       return;
     }
 
-    const response = await fetch('http://localhost:4000/create-verification-session', { method: 'POST' });
+
+
+    const response = await fetch('https://33r6dmbj-4000.inc1.devtunnels.ms/create-verification-session', { method: 'POST' });
     const session = await response.json();
 
     const { error } = await stripe?.verifyIdentity(session.client_secret);
 
     if (error) {
-      console.log('[error]', error.message);
+      console.log('[error]', error);
     } else {
       console.log('Verification submitted!');
       setSubmitted(true);
